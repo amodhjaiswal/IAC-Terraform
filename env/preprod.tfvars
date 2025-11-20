@@ -1,7 +1,7 @@
 ###########----------GLOBAL VARIABLE---------###########
 env_name      = "preprod"
-project_name  =  "bee"
-region        = "us-east-1"
+project_name  =  "appin"
+region        = "us-east-2"
 aws_account_id = "581580844553"
 cluster_name = "testing-preprod-eks"
 create_manifests = true
@@ -12,7 +12,7 @@ domain = "appskeeper.in"
 cidr_block = "10.0.0.0/16"
 public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
 private_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+availability_zones = ["us-east-2a", "us-east-2b", "us-east-2c"]
 
 
 ###########----------Bastion-ec2---------###########

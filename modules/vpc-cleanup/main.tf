@@ -1,7 +1,7 @@
 resource "null_resource" "vpc_sg_cleanup" {
   triggers = {
-    region    = var.region
-    vpc_cidr  = var.vpc_cidr
+    region   = var.region
+    vpc_id   = var.vpc_id
   }
 
   provisioner "local-exec" {
@@ -9,12 +9,10 @@ resource "null_resource" "vpc_sg_cleanup" {
     command = <<-EOT
       echo "=== VPC Security Group Cleanup Started ==="
       
-      vpc_id=$(aws ec2 describe-vpcs --region ${self.triggers.region} \
-        --filters "Name=cidr-block-association.cidr-block,Values=${self.triggers.vpc_cidr}" \
-        --query "Vpcs[0].VpcId" --output text 2>/dev/null || echo "None")
+      vpc_id="${self.triggers.vpc_id}"
       
-      if [ "$vpc_id" = "None" ] || [ -z "$vpc_id" ]; then
-        echo "VPC not found, cleanup complete"
+      if [ -z "$vpc_id" ]; then
+        echo "VPC ID not provided, cleanup complete"
         exit 0
       fi
       

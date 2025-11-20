@@ -17,8 +17,7 @@ module "vpc_cleanup" {
   source   = "./modules/vpc-cleanup"
   region   = var.region
   vpc_cidr = var.cidr_block
-  
-  depends_on = [module.vpc]
+  vpc_id   = module.vpc.vpc_id
 }
 
 ###########----------EC2-BASTION---------###########
@@ -62,15 +61,15 @@ module "elastic-cache-redis" {
   depends_on = [module.kms-cloudwatch-logs]
 }
 
-# ###########----------S3-WITH-CF---------###########
-# module "frontend-s3-cf" {
-#   source                   = "./modules/frontend_s3_cf"
-#   env_name                 = terraform.workspace
-#   project_name             = var.project_name
-#   tags                     = var.tags
-#   frontend_bucket_name     = var.frontend_bucket_name
+###########----------S3-WITH-CF---------###########
+module "frontend-s3-cf" {
+  source                   = "./modules/frontend_s3_cf"
+  env_name                 = terraform.workspace
+  project_name             = var.project_name
+  tags                     = var.tags
+  frontend_bucket_name     = var.frontend_bucket_name
 
-# }
+}
 
 ###########----------Media-S3-WITH-CF---------###########
 module "media-s3-cf" {
