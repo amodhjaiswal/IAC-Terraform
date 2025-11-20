@@ -1,6 +1,7 @@
 locals {
-  grafana_host = "grafana.${var.env_name}.${var.domain}"
-  argocd_host  = "argocd.${var.env_name}.${var.domain}"
+  grafana_host = "grafana-${var.env_name}.${var.domain}"
+  argocd_host  = "argocd-${var.env_name}.${var.domain}"
+  backend_host = "api-${var.env_name}.${var.domain}"
   shared_group = "${var.project_name}-${var.env_name}-shared-lb"
 }
 

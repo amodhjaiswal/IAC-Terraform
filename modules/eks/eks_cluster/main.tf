@@ -53,7 +53,7 @@ resource "aws_cloudwatch_log_group" "eks_cluster" {
 resource "aws_eks_cluster" "this" {
   name     = "${local.name_prefix}-eks"
   role_arn = aws_iam_role.eks_cluster_role.arn
-  version  = var.cluster_version
+  version  = var.cluster_version   # e.g. "1.32"
 
   vpc_config {
     subnet_ids              = var.private_subnet_ids
@@ -84,10 +84,20 @@ resource "aws_eks_cluster" "this" {
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name                = aws_eks_cluster.this.name
   addon_name                  = "vpc-cni"
+  # Let AWS choose a compatible version for EKS 1.32
+  # addon_version             = "v1.x.x-eksbuild.y"
+
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
 
-  depends_on = [aws_eks_node_group.managed_nodes]
+  # Enable IP prefix delegation for Linux nodes (no WARM_* tuning)
+  configuration_values = jsonencode({
+    env = {
+      ENABLE_PREFIX_DELEGATION = "true"
+    }
+  })
+
+  depends_on = [aws_eks_cluster.this]
 }
 
 resource "aws_eks_addon" "coredns" {
@@ -118,11 +128,11 @@ resource "aws_eks_addon" "pod_identity_agent" {
 }
 
 #######################################
-# Launch Template (UNCHANGED — NO KMS)
+# Launch Template (maxPods: 110)
 #######################################
 resource "aws_launch_template" "node_lt" {
   name_prefix   = "${local.name_prefix}-lt-"
-  instance_type = var.node_instance_type
+  instance_type = var.node_instance_type   # make sure this is a Nitro instance
 
   block_device_mappings {
     device_name = var.root_device_name
@@ -131,10 +141,29 @@ resource "aws_launch_template" "node_lt" {
       volume_size           = var.node_root_volume_size
       volume_type           = "gp3"
       delete_on_termination = true
-      encrypted             = true          # <-- unchanged
-      # NO KMS KEY HERE (as you requested)
+      encrypted             = true
     }
   }
+
+  # Configure kubelet with maxPods: 110
+  user_data = base64encode(<<-EOF
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="//"
+
+--//
+Content-Type: application/node.eks.aws
+
+---
+apiVersion: node.eks.aws/v1alpha1
+kind: NodeConfig
+spec:
+  kubelet:
+    config:
+      maxPods: 110
+
+--//--
+EOF
+  )
 
   tag_specifications {
     resource_type = "instance"
@@ -161,7 +190,7 @@ resource "aws_eks_node_group" "managed_nodes" {
 
   launch_template {
     id      = aws_launch_template.node_lt.id
-    version = "$Latest"
+    version = aws_launch_template.node_lt.latest_version
   }
 
   labels = var.node_labels
@@ -171,9 +200,14 @@ resource "aws_eks_node_group" "managed_nodes" {
     "k8s.io/cluster-autoscaler/enabled" = tostring(var.enable_cluster_autoscaler)
   })
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   depends_on = [
     aws_eks_cluster.this,
     aws_launch_template.node_lt,
+    aws_eks_addon.vpc_cni,
   ]
 }
 

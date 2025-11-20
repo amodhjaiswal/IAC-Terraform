@@ -201,6 +201,7 @@ module "eks_manifest" {
   project_name        = var.project_name
   env_name            = var.env_name
   domain              = var.domain
+  certificate_arn     = var.certificate_arn
 
   providers = {
     kubernetes = kubernetes
