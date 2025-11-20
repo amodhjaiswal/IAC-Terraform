@@ -1,6 +1,6 @@
 ###########----------GLOBAL VARIABLE---------###########
 env_name      = "preprod"
-project_name  =  "env"
+project_name  =  "bee"
 region        = "us-east-1"
 aws_account_id = "581580844553"
 cluster_name = "testing-preprod-eks"
@@ -26,6 +26,7 @@ bastion_ebs_size = 40
 node_type = "cache.t3.medium"
 engine_version = 7.1
 engine_version_major = 7
+redis__logs_retention = 30
 
 ###########----------frontend-s3-cf---------###########
 frontend_bucket_name= "admin"
@@ -39,7 +40,7 @@ node_instance_type = "t3.medium"
 node_min_size = 3
 node_desired_size = 3
 node_max_size = 3
-
+eks_logs_retention = 30
 ###########----------codepipeline-backend-eks---------###########
 service_name_1 = "admin"
 service_name_2 = "auth"

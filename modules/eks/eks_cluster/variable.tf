@@ -118,3 +118,12 @@ variable "create_manifests" {
   type        = bool
   default     = true
 }
+
+variable "eks_logs_retention" {
+  description = "eks log retention days"
+  type        = string
+}
+variable "kms_key_id" {
+  description = "KMS key ID for CloudWatch logs encryption"
+  type        = string
+}

@@ -48,13 +48,15 @@ resource "aws_elasticache_subnet_group" "redis_subnet_group" {
 # CloudWatch Log Groups
 resource "aws_cloudwatch_log_group" "redis_slowlog" {
   name              = "${var.project_name}-${var.env_name}-redis-slowlog"
-  retention_in_days = 14
+  retention_in_days = var.redis__logs_retention
+  kms_key_id        = var.kms_key_id
   tags              = var.tags
 }
 
 resource "aws_cloudwatch_log_group" "redis_enginelog" {
   name              = "${var.project_name}-${var.env_name}-redis-enginelog"
-  retention_in_days = 14
+  retention_in_days = var.redis__logs_retention
+  kms_key_id        = var.kms_key_id
   tags              = var.tags
 }
 

@@ -3,14 +3,15 @@ provider "aws" {
 }
 
 data "aws_eks_cluster" "this" {
-  count = var.create_manifests ? 1 : 0
-  name  = module.eks.cluster_name
+  count      = var.create_manifests ? 1 : 0
+  name       = module.eks.cluster_name
+  depends_on = [module.eks]
 }
 
 data "aws_eks_cluster_auth" "this" {
-  count = var.create_manifests ? 1 : 0
-  name  = module.eks.cluster_name
-  depends_on = [data.aws_eks_cluster.this]
+  count      = var.create_manifests ? 1 : 0
+  name       = module.eks.cluster_name
+  depends_on = [module.eks, data.aws_eks_cluster.this]
 }
 
 provider "kubernetes" {

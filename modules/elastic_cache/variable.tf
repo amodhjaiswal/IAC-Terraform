@@ -52,3 +52,12 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+variable "redis__logs_retention" {
+  description = "redis log retention days"
+  type        = string
+}
+
+variable "kms_key_id" {
+  description = "KMS key ID for CloudWatch logs encryption"
+  type        = string
+}

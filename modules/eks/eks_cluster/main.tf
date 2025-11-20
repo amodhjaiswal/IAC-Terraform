@@ -18,16 +18,14 @@ resource "aws_security_group" "eks_controlplane" {
   description = "EKS control plane security group"
   vpc_id      = var.vpc_id
 
-  # Allow all inbound traffic from Bastion security group
   ingress {
-    description              = "Allow all inbound traffic from Bastion host"
-    from_port                = 0
-    to_port                  = 0
-    protocol                 = "-1"
-    security_groups          = [var.bastion_sg_id]
+    description     = "Allow inbound from bastion host"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = [var.bastion_sg_id]
   }
 
-  # Allow all outbound traffic (required for EKS control plane)
   egress {
     from_port   = 0
     to_port     = 0
@@ -36,6 +34,17 @@ resource "aws_security_group" "eks_controlplane" {
   }
 
   tags = local.common_tags
+}
+
+#######################################
+# CloudWatch Log Group for EKS Logs
+# (ENCRYPTED WITH CUSTOMER KMS KEY)
+#######################################
+resource "aws_cloudwatch_log_group" "eks_cluster" {
+  name              = "/aws/eks/${local.name_prefix}-eks/cluster"
+  retention_in_days = var.eks_logs_retention
+  kms_key_id        = var.kms_key_id        # <-- ONLY logs use KMS encryption
+  tags              = local.common_tags
 }
 
 #######################################
@@ -51,7 +60,7 @@ resource "aws_eks_cluster" "this" {
     security_group_ids      = [aws_security_group.eks_controlplane.id]
     endpoint_private_access = true
     endpoint_public_access  = true
-    public_access_cidrs     = ["0.0.0.0/0"] # Restrict to specific IPs if needed
+    public_access_cidrs     = ["0.0.0.0/0"]
   }
 
   access_config {
@@ -65,11 +74,12 @@ resource "aws_eks_cluster" "this" {
   depends_on = [
     aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy,
     aws_iam_role_policy_attachment.cluster_AmazonEKSVPCResourceController,
+    aws_cloudwatch_log_group.eks_cluster   # ENSURE LOG GROUP CREATED FIRST
   ]
 }
 
 #######################################
-# EKS Addons (Latest Recommended Versions)
+# EKS Addons
 #######################################
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name                = aws_eks_cluster.this.name
@@ -78,10 +88,6 @@ resource "aws_eks_addon" "vpc_cni" {
   resolve_conflicts_on_update = "OVERWRITE"
 
   depends_on = [aws_eks_node_group.managed_nodes]
-
-  timeouts {
-    delete = "15m"
-  }
 }
 
 resource "aws_eks_addon" "coredns" {
@@ -91,10 +97,6 @@ resource "aws_eks_addon" "coredns" {
   resolve_conflicts_on_update = "OVERWRITE"
 
   depends_on = [aws_eks_node_group.managed_nodes]
-
-  timeouts {
-    delete = "15m"
-  }
 }
 
 resource "aws_eks_addon" "kube_proxy" {
@@ -104,10 +106,6 @@ resource "aws_eks_addon" "kube_proxy" {
   resolve_conflicts_on_update = "OVERWRITE"
 
   depends_on = [aws_eks_node_group.managed_nodes]
-
-  timeouts {
-    delete = "15m"
-  }
 }
 
 resource "aws_eks_addon" "pod_identity_agent" {
@@ -117,14 +115,10 @@ resource "aws_eks_addon" "pod_identity_agent" {
   resolve_conflicts_on_update = "OVERWRITE"
 
   depends_on = [aws_eks_node_group.managed_nodes]
-
-  timeouts {
-    delete = "15m"
-  }
 }
 
 #######################################
-# Launch Template
+# Launch Template (UNCHANGED — NO KMS)
 #######################################
 resource "aws_launch_template" "node_lt" {
   name_prefix   = "${local.name_prefix}-lt-"
@@ -132,11 +126,13 @@ resource "aws_launch_template" "node_lt" {
 
   block_device_mappings {
     device_name = var.root_device_name
+
     ebs {
       volume_size           = var.node_root_volume_size
       volume_type           = "gp3"
       delete_on_termination = true
-      encrypted             = true
+      encrypted             = true          # <-- unchanged
+      # NO KMS KEY HERE (as you requested)
     }
   }
 
@@ -194,14 +190,12 @@ resource "aws_iam_openid_connect_provider" "oidc" {
 }
 
 #######################################
-# EKS Access Entries for CodeBuild Role
+# EKS Access Entries — CodeBuild
 #######################################
 resource "aws_eks_access_entry" "codebuild_access" {
   cluster_name  = aws_eks_cluster.this.name
   principal_arn = var.codebuild_role_arn
   type          = "STANDARD"
-
-  depends_on = [aws_eks_cluster.this]
 }
 
 resource "aws_eks_access_policy_association" "codebuild_admin" {
@@ -229,14 +223,12 @@ resource "aws_eks_access_policy_association" "codebuild_admin_view" {
 }
 
 #######################################
-# EKS Access Entries for Bastion SSM Role
+# EKS Access Entries — Bastion
 #######################################
 resource "aws_eks_access_entry" "bastion_access" {
   cluster_name  = aws_eks_cluster.this.name
   principal_arn = var.bastion_ssm_role_arn
   type          = "STANDARD"
-
-  depends_on = [aws_eks_cluster.this]
 }
 
 resource "aws_eks_access_policy_association" "bastion_admin" {

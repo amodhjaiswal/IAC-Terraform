@@ -20,3 +20,10 @@ variable "multi_az" {
   type        = bool
   default     = true
 }
+
+variable "redis__logs_retention" {
+  description = "redis log retention days"
+  type        = string
+}
+
+

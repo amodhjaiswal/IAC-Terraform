@@ -38,6 +38,11 @@ variable "metrics_server_chart_version" {
   default     = "3.12.1"
 }
 
+variable "eks_logs_retention" {
+  description = "eks log retention days"
+  type        = string
+}
+
 
 
 

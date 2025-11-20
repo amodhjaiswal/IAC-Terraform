@@ -36,18 +36,30 @@ module "ec2-bastion" {
   bastion_ebs_size    = var.bastion_ebs_size
 }
 
+###########----------KMS FOR CLOUDWATCH LOGS---------###########
+module "kms-cloudwatch-logs" {
+  source       = "./modules/kms/cloudwatch_logs"
+  env_name     = terraform.workspace
+  project_name = var.project_name
+  tags         = var.tags
+}
+
 ###########----------REDIS---------###########
 module "elastic-cache-redis" {
-  source                  = "./modules/elastic_cache"
-  env_name                = terraform.workspace
-  project_name            = var.project_name
-  tags                    = var.tags
-  vpc_id                  = module.vpc.vpc_id
-  vpc_cidr                = var.cidr_block
-  private_subnet_ids      = module.vpc.private_subnet_ids
-  node_type               = var.node_type
-  engine_version          = var.engine_version
-  engine_version_major    = var.engine_version_major
+  source                = "./modules/elastic_cache"
+  env_name              = terraform.workspace
+  project_name          = var.project_name
+  tags                  = var.tags
+  vpc_id                = module.vpc.vpc_id
+  vpc_cidr              = var.cidr_block
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  node_type             = var.node_type
+  engine_version        = var.engine_version
+  engine_version_major  = var.engine_version_major
+  redis__logs_retention = var.redis__logs_retention
+  kms_key_id            = module.kms-cloudwatch-logs.kms_key_arn
+
+  depends_on = [module.kms-cloudwatch-logs]
 }
 
 # ###########----------S3-WITH-CF---------###########
@@ -111,6 +123,10 @@ module "eks" {
   region                  = var.region
   secret_arn              = module.secret-manager.secret_arn
   bucket_name             = module.media-s3-cf.bucket_name
+  eks_logs_retention      = var.eks_logs_retention
+  kms_key_id              = module.kms-cloudwatch-logs.kms_key_arn
+
+  depends_on = [module.kms-cloudwatch-logs]
   
 
 }
