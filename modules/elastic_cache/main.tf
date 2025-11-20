@@ -1,4 +1,6 @@
-# Security Group
+#########################################
+# SECURITY GROUP
+#########################################
 resource "aws_security_group" "redis_sg" {
   name        = "${var.project_name}-${var.env_name}-redis-sg"
   description = "Security group for Redis"
@@ -22,7 +24,9 @@ resource "aws_security_group" "redis_sg" {
   tags = var.tags
 }
 
-# Parameter Group
+#########################################
+# PARAMETER GROUP
+#########################################
 resource "aws_elasticache_parameter_group" "redis_param_group" {
   name        = "${var.project_name}-${var.env_name}-redis-param-group"
   family      = "redis${var.engine_version_major}"
@@ -36,16 +40,19 @@ resource "aws_elasticache_parameter_group" "redis_param_group" {
   tags = var.tags
 }
 
-# Subnet Group
+#########################################
+# SUBNET GROUP
+#########################################
 resource "aws_elasticache_subnet_group" "redis_subnet_group" {
   name        = "${var.project_name}-${var.env_name}-redis-subnet-group"
   subnet_ids  = var.private_subnet_ids
   description = "Subnet group for Redis"
-
-  tags = var.tags
+  tags        = var.tags
 }
 
-# CloudWatch Log Groups
+#########################################
+# CLOUDWATCH LOG GROUPS
+#########################################
 resource "aws_cloudwatch_log_group" "redis_slowlog" {
   name              = "${var.project_name}-${var.env_name}-redis-slowlog"
   retention_in_days = var.redis__logs_retention
@@ -60,25 +67,40 @@ resource "aws_cloudwatch_log_group" "redis_enginelog" {
   tags              = var.tags
 }
 
-# Redis Replication Group
+#########################################
+# REDIS REPLICATION GROUP
+#########################################
 resource "aws_elasticache_replication_group" "redis_cluster" {
-  replication_group_id       = "${var.project_name}-${var.env_name}-redis"
-  description                = "Redis replication group (2 nodes, cluster mode disabled)"
-  engine                     = "redis"
-  engine_version             = var.engine_version
-  node_type                  = var.node_type
-  replicas_per_node_group    = 1
-  automatic_failover_enabled = var.multi_az
-  multi_az_enabled           = var.multi_az
-  parameter_group_name       = aws_elasticache_parameter_group.redis_param_group.name
-  subnet_group_name          = aws_elasticache_subnet_group.redis_subnet_group.name
-  security_group_ids         = [aws_security_group.redis_sg.id]
-  at_rest_encryption_enabled = true
-  transit_encryption_enabled = true
-  apply_immediately          = true
-  cluster_mode               = "disabled"
-  snapshot_retention_limit   = 7
-  snapshot_window            = "05:00-06:00"
+  replication_group_id          = "${var.project_name}-${var.env_name}-redis"
+  description                   = "Redis replication group"
+  engine                        = "redis"
+  engine_version                = var.engine_version
+  node_type                     = var.node_type
+
+  # Automatic failover + Multi-AZ
+  automatic_failover_enabled    = var.multi_az
+  multi_az_enabled              = var.multi_az
+
+  parameter_group_name          = aws_elasticache_parameter_group.redis_param_group.name
+  subnet_group_name             = aws_elasticache_subnet_group.redis_subnet_group.name
+  security_group_ids            = [aws_security_group.redis_sg.id]
+
+  at_rest_encryption_enabled    = true
+  transit_encryption_enabled    = true
+
+  snapshot_retention_limit      = 7
+  snapshot_window               = "05:00-06:00"
+
+  apply_immediately             = true
+
+  #############################################
+  # Cluster Mode (Enabled/Disabled Dynamically)
+  #############################################
+  cluster_mode = var.enable_cluster_mode ? "enabled" : "disabled"
+
+  # When cluster mode ENABLED → use node groups
+  num_node_groups          = var.enable_cluster_mode ? var.num_node_groups : null
+  replicas_per_node_group  = var.enable_cluster_mode ? var.replicas_per_node_group : 1
 
   log_delivery_configuration {
     destination_type = "cloudwatch-logs"

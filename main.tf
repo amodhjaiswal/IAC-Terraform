@@ -57,6 +57,7 @@ module "elastic-cache-redis" {
   engine_version_major  = var.engine_version_major
   redis__logs_retention = var.redis__logs_retention
   kms_key_id            = module.kms-cloudwatch-logs.kms_key_arn
+  enable_cluster_mode   = var.enable_cluster_mode
 
   depends_on = [module.kms-cloudwatch-logs]
 }
@@ -213,6 +214,40 @@ module "eks_manifest" {
     module.eks_argocd
   ]
 }
+###########----------MONITORING-GRAFANA---------###########
+
+module "eks_grafana" {
+  source = "./modules/eks/eks_grafana"
+
+  create_monitoring        = var.create_monitoring
+  project_name            = var.project_name
+  env_name                = terraform.workspace
+  cluster_name            = module.eks.cluster_name
+  region                  = var.region
+  account_id              = var.aws_account_id
+  oidc_provider_arn       = module.eks.oidc_provider_arn
+  oidc_provider_url       = module.eks.oidc_url
+  grafana_admin_password  = var.grafana_admin_password
+  loki_retention_period   = var.loki_retention_period
+  loki_storage_size       = var.loki_storage_size
+  prometheus_storage_size = var.prometheus_storage_size
+  grafana_storage_size    = var.grafana_storage_size
+  promtail_storage_size   = var.promtail_storage_size
+  enable_metrics_server   = var.enable_metrics_server
+  metrics_server_chart_version = var.metrics_server_chart_version
+  eks_cluster_endpoint    = module.eks.cluster_endpoint
+
+  providers = {
+    aws        = aws
+    kubernetes = kubernetes
+    helm       = helm
+  }
+
+  depends_on = [
+    module.eks,
+    module.eks_aws_lb_controller
+  ]
+}
 
 
 ###########----------CODEPIPELINE-GLOBAL---------###########
@@ -291,41 +326,6 @@ module "codepipeline-global" {
 # ecs_task_count     = var.ecs_task_count
 
 # }
-
-###########----------MONITORING-GRAFANA---------###########
-
-module "eks_grafana" {
-  source = "./modules/eks/eks_grafana"
-
-  create_monitoring        = var.create_monitoring
-  project_name            = var.project_name
-  env_name                = terraform.workspace
-  cluster_name            = module.eks.cluster_name
-  region                  = var.region
-  account_id              = var.aws_account_id
-  oidc_provider_arn       = module.eks.oidc_provider_arn
-  oidc_provider_url       = module.eks.oidc_url
-  grafana_admin_password  = var.grafana_admin_password
-  loki_retention_period   = var.loki_retention_period
-  loki_storage_size       = var.loki_storage_size
-  prometheus_storage_size = var.prometheus_storage_size
-  grafana_storage_size    = var.grafana_storage_size
-  promtail_storage_size   = var.promtail_storage_size
-  enable_metrics_server   = var.enable_metrics_server
-  metrics_server_chart_version = var.metrics_server_chart_version
-  eks_cluster_endpoint    = module.eks.cluster_endpoint
-
-  providers = {
-    aws        = aws
-    kubernetes = kubernetes
-    helm       = helm
-  }
-
-  depends_on = [
-    module.eks,
-    module.eks_aws_lb_controller
-  ]
-}
 
 # ################---------ECS-CODEPIPELINE------################
 

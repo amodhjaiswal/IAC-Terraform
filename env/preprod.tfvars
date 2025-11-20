@@ -6,6 +6,7 @@ aws_account_id = "581580844553"
 cluster_name = "testing-preprod-eks"
 create_manifests = true
 domain = "appskeeper.in"
+certificate_arn = ""
 
 ###########----------VPC---------###########
 
@@ -27,6 +28,7 @@ node_type = "cache.t3.medium"
 engine_version = 7.1
 engine_version_major = 7
 redis__logs_retention = 30
+enable_cluster_mode = false
 
 ###########----------frontend-s3-cf---------###########
 frontend_bucket_name= "admin"

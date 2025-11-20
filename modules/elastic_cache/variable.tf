@@ -4,60 +4,74 @@ variable "project_name" {
 }
 
 variable "env_name" {
-  description = "Environment name (workspace)"
+  description = "Environment name"
   type        = string
 }
 
-
 variable "vpc_id" {
-  description = "VPC ID"
   type        = string
+  description = "VPC ID"
 }
 
 variable "vpc_cidr" {
-  description = "VPC CIDR for SG access"
   type        = string
+  description = "VPC CIDR"
 }
 
 variable "private_subnet_ids" {
-  description = "Private subnet IDs for Redis"
   type        = list(string)
+  description = "Private subnet IDs"
 }
 
 variable "node_type" {
-  description = "Elasticache Redis node type/size (e.g., cache.t3.medium)"
   type        = string
+  description = "Redis instance type"
 }
 
 variable "engine_version" {
-  description = "Redis engine version"
   type        = string
   default     = "7.1"
 }
 
 variable "engine_version_major" {
-  description = "Major Redis version for parameter group"
   type        = string
   default     = "7"
 }
 
 variable "multi_az" {
-  description = "Enable Multi-AZ"
-  type        = bool
-  default     = true
+  type    = bool
+  default = true
 }
 
-variable "tags" {
-  description = "Tags for all resources"
-  type        = map(string)
-  default     = {}
-}
 variable "redis__logs_retention" {
-  description = "redis log retention days"
-  type        = string
+  type        = number
+  description = "Redis log retention in days"
 }
 
 variable "kms_key_id" {
-  description = "KMS key ID for CloudWatch logs encryption"
   type        = string
+  description = "KMS key ID"
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
+
+variable "enable_cluster_mode" {
+  description = "Enable cluster mode (true/false)"
+  type        = bool
+  default     = false
+}
+
+variable "num_node_groups" {
+  description = "Number of node groups (required when cluster mode = enabled)"
+  type        = number
+  default     = 2
+}
+
+variable "replicas_per_node_group" {
+  description = "Replicas per node group when cluster mode enabled"
+  type        = number
+  default     = 1
 }

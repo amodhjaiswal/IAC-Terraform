@@ -39,3 +39,8 @@ variable "domain" {
   description = "Domain name for ingress hosts"
   type        = string
 }
+
+variable "certificate_arn" {
+  description = "certificate arn"
+  type        = string
+}

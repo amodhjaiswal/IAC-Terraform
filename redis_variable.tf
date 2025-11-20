@@ -26,4 +26,8 @@ variable "redis__logs_retention" {
   type        = string
 }
 
-
+variable "enable_cluster_mode" {
+  description = "Enable cluster mode (true/false)"
+  type        = bool
+  default     = false
+}
