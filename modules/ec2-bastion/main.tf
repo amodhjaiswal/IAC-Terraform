@@ -125,4 +125,3 @@ resource "aws_eip" "bastion_eip" {
   })
 }
 
-

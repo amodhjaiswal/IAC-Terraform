@@ -16,7 +16,7 @@ availability_zones = ["us-east-2a", "us-east-2b", "us-east-2c"]
 
 
 ###########----------Bastion-ec2---------###########
-ami_id   = "ami-06e5a963b2dadea6f"  # Openvpn ami
+ami_id   = "ami-0a36d74f29e8a3ee9"  # Openvpn ami
 instance_type = "t3.small"
 instance_name = "bastion"
 bastion_ebs_size = 40
